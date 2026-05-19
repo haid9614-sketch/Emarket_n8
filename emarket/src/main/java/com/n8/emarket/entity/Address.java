@@ -1,30 +1,34 @@
 package com.n8.emarket.entity;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 @Entity
-@Table(name = "customer")
+@Table(name = "address")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Customer {
+public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_customer")
-    private Long idCustomer;
-    @Column(name = "name", nullable = false)
-    private String name;
-    @Column(name = "age")
-    private Integer age;
-    @Column(name = "email", nullable = false, unique = true)
-    private String email;
-    @Column(name = "phone", length = 15)
-    private String phone;
-    @Column(name = "password", nullable = false)
-    private String password;
+    @Column(name = "id_address")
+    private Long idAddress;
+    @Column(name = "house_number")
+    private String houseNumber;
+    @Column(name = "ward", nullable = false)
+    private String ward;
+    @Column(name = "district", nullable = false)
+    private String district;
+    @Column(name = "city", nullable = false)
+    private String city;
+    @ManyToOne
+    @JoinColumn(name = "id_customer")
+    private Customer customer;
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
