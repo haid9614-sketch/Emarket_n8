@@ -1,4 +1,4 @@
-package com.n8.emarket.DTO;
+package com.n8.emarket.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

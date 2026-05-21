@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 @Repository
 public interface CartsRepository extends JpaRepository<Carts, Long> {
+    // tìm Cart = ID Khách hàng
+    Carts findByCustomer_IdCustomer(Long idCustomer);
 }

@@ -6,5 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface StockRepository extends JpaRepository<Stock, Long> {
-
+    // Tìm tồn kho = ID Sản phẩm
+    Stock findByProduct_IdProduct(Long idProduct);
 }
