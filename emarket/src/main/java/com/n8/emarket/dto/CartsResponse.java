@@ -6,8 +6,8 @@ import java.util.List;
 
 @Data
 public class CartsResponse {
-    private Long idCart;
+    private Long idCarts;
     private List<CartItemsResponse> items;
-    // Tổng tiền cả giỏ hàng
+    // frontend
     private Double totalPrice;
 }

@@ -36,5 +36,19 @@ public class Orders {
     private LocalDateTime updatedAt;
     @Column(name = "is_delete")
     private Integer isDelete = 0;
+    @Column(name = "receiver_name")
+    private String receiverName;
+
+    @Column(name = "receiver_phone")
+    private String receiverPhone;
+
+    @Column(name = "shipping_address", columnDefinition = "TEXT")
+    private String shippingAddress;
+
+    @Column(name = "payment_method")
+    private String paymentMethod;
+
+    @Column(name = "note")
+    private String note;
 }
 

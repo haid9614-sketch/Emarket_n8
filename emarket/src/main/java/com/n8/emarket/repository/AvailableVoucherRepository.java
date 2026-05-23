@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AvailableVoucherRepository extends JpaRepository<AvailableVoucher, Long> {
+    AvailableVoucher findByCustomer_IdCustomerAndVoucher_IdVoucher(Long idCustomer, Long idVoucher);
 }

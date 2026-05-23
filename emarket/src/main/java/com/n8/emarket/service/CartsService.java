@@ -8,7 +8,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CartsService {
@@ -63,33 +65,65 @@ public class CartsService {
     }
 
     // hàm xem gio hang
-    public CartsResponse getCartByCustomerId(Long idCustomer) {
+    public CartsResponse getCartsByCustomerId(Long idCustomer) {
         CartsResponse cartsResponse = new CartsResponse();
-        // kiem tra gio hang khach co j chua
+
         Carts cart = cartsRepository.findByCustomer_IdCustomer(idCustomer);
         if (cart == null) {
             cartsResponse.setItems(new java.util.ArrayList<>());
             cartsResponse.setTotalPrice(0.0);
             return cartsResponse;
         }
+
         List<CartItems> listItems = cartItemsRepository.findByCart_IdCarts(cart.getIdCarts());
+        if (listItems.isEmpty()) {
+            cartsResponse.setIdCarts(cart.getIdCarts());
+            cartsResponse.setItems(new java.util.ArrayList<>());
+            cartsResponse.setTotalPrice(0.0);
+            return cartsResponse;
+        }
+
+        List<Long> productIds = listItems.stream()
+                .map(item -> item.getProduct().getIdProduct())
+                .toList();
+
+        List<Stock> stocks = stockRepository.findByProduct_IdProductIn(productIds);
+
+
+        Map<Long, Stock> stockMap = new HashMap<>();
+        for (Stock stock : stocks) {
+            Long key = stock.getProduct().getIdProduct();
+            stockMap.put(key, stock);
+        }
+
         List<CartItemsResponse> itemResponses = new java.util.ArrayList<>();
         Double totalPrice = 0.0;
+
         for (CartItems item : listItems) {
             CartItemsResponse itemDto = new CartItemsResponse();
             itemDto.setIdProduct(item.getProduct().getIdProduct());
             itemDto.setProductName(item.getProduct().getName());
             itemDto.setImageUrl(item.getProduct().getImageUrl());
             itemDto.setPrice(item.getProduct().getPrice());
-            itemDto.setQuantity(item.getQuantity());
 
             Double subTotal = item.getProduct().getPrice() * item.getQuantity();
             itemDto.setSubTotal(subTotal);
 
+            Stock stock = stockMap.get(item.getProduct().getIdProduct());
+
+            if (stock != null && stock.getStockQuantity() >= item.getQuantity()) {
+                itemDto.setAvailable(true);
+                itemDto.setMaxAvailable(stock.getStockQuantity());
+                totalPrice += subTotal;
+            } else {
+                itemDto.setAvailable(false);
+                itemDto.setMaxAvailable(stock != null ? stock.getStockQuantity() : 0);
+            }
+
             itemResponses.add(itemDto);
-            totalPrice += subTotal;
         }
-        cartsResponse.setIdCart(cart.getIdCarts());
+
+        cartsResponse.setIdCarts(cart.getIdCarts());
         cartsResponse.setItems(itemResponses);
         cartsResponse.setTotalPrice(totalPrice);
 

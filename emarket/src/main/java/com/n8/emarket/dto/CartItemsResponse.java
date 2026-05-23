@@ -9,6 +9,8 @@ public class CartItemsResponse {
     private String imageUrl;
     private Double price;
     private Integer quantity;
-    // Tổng tiền của món này (giá * số lượng)
     private Double subTotal;
+    // frontend
+    private boolean isAvailable;
+    private Integer maxAvailable;
 }

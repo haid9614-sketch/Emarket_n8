@@ -23,7 +23,7 @@ public class CartsController {
     // api xem gio hang http://localhost:8080/api/carts/1 (với 1 là ID khách)
     @GetMapping("/{idCustomer}")
     public ResponseEntity<CartsResponse> getCart(@PathVariable Long idCustomer) {
-        CartsResponse cart = cartsService.getCartByCustomerId(idCustomer);
+        CartsResponse cart = cartsService.getCartsByCustomerId(idCustomer);
         return ResponseEntity.ok(cart);
     }
 
