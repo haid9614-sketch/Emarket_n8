@@ -1,5 +1,6 @@
 package com.n8.emarket.service;
 import com.n8.emarket.dto.CheckoutRequest;
+import com.n8.emarket.dto.OrderResponse;
 import com.n8.emarket.entity.*;
 import com.n8.emarket.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ public class OrdersService {
     @Autowired private AddressRepository addressRepository;
     @Autowired private AvailableVoucherRepository availableVoucherRepository;
 
+    // ham thanh toan dat hang
     @Transactional
     public String checkout(CheckoutRequest request) {
 
@@ -61,7 +63,7 @@ public class OrdersService {
         for (CartItems item : cartItemsList) {
             totalPrice += item.getProduct().getPrice() * item.getQuantity();
         }
-
+        Orders order = new Orders();
         Double finalPrice = totalPrice;
 
         if (request.getIdVoucher() != null) {
@@ -79,12 +81,11 @@ public class OrdersService {
             if (finalPrice < 0) {
                 finalPrice = 0.0;
             }
-
+            order.setVoucher(myVoucher.getVoucher());
             myVoucher.setQuantity(myVoucher.getQuantity() - 1);
             availableVoucherRepository.save(myVoucher);
         }
 
-        Orders order = new Orders();
         order.setCustomer(customer);
         order.setReceiverName(customer.getName());
         order.setReceiverPhone(customer.getPhone());
@@ -122,5 +123,86 @@ public class OrdersService {
         cartItemsRepository.deleteAll(cartItemsList);
 
         return "Đặt hàng thành công! Tổng tiền phải trả: " + finalPrice + " VNĐ. Mã đơn: " + order.getIdOrders();
+    }
+
+    // ham xem don da dat
+    public List<OrderResponse> getOrderHistory(Long idCustomer) {
+        List<Orders> ordersList = ordersRepository.findByCustomer_IdCustomerAndIsDeleteOrderByCreatedAtDesc(idCustomer, 0);
+        List<OrderResponse> responseList = new ArrayList<>();
+
+        for (Orders order : ordersList) {
+            OrderResponse orderDto = new OrderResponse();
+            orderDto.setIdOrders(order.getIdOrders());
+            orderDto.setReceiverName(order.getReceiverName());
+            orderDto.setReceiverPhone(order.getReceiverPhone());
+            orderDto.setShippingAddress(order.getShippingAddress());
+            orderDto.setPaymentMethod(order.getPaymentMethod());
+            orderDto.setStatus(order.getStatus());
+            orderDto.setTotal(order.getTotal());
+            orderDto.setNote(order.getNote());
+            orderDto.setCreatedAt(order.getCreatedAt());
+
+            List<OrderDetails> details = orderDetailsRepository.findByOrders_IdOrders(order.getIdOrders());
+            List<OrderResponse.OrderDetailItem> itemDtos = new ArrayList<>();
+
+            for (OrderDetails detail : details) {
+                OrderResponse.OrderDetailItem itemDto = new OrderResponse.OrderDetailItem();
+                itemDto.setProductName(detail.getProduct().getName());
+                itemDto.setQuantity(detail.getQuantity());
+                itemDto.setPrice(detail.getPrice());
+                itemDtos.add(itemDto);
+            }
+            orderDto.setItems(itemDtos);
+            responseList.add(orderDto);
+        }
+        return responseList;
+    }
+
+    // ham huy don hang
+    @Transactional
+    public String cancelOrder(Long idOrder, Long idCustomer) {
+        Orders order = ordersRepository.findById(idOrder)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng này trong hệ thống!"));
+
+        if (!order.getCustomer().getIdCustomer().equals(idCustomer)) {
+            throw new RuntimeException("Bạn không có quyền hủy đơn hàng của tài khoản khác!");
+        }
+
+        if (!"PENDING".equals(order.getStatus())) {
+            throw new RuntimeException("Đơn hàng này đã được hệ thống xử lý hoặc đang giao, không thể hủy!");
+        }
+
+        order.setStatus("CANCELLED");
+        ordersRepository.save(order);
+
+        if (order.getVoucher() != null) {
+            AvailableVoucher myVoucher = availableVoucherRepository
+                    .findByCustomer_IdCustomerAndVoucher_IdVoucher(idCustomer, order.getVoucher().getIdVoucher());
+
+            if (myVoucher != null) {
+                myVoucher.setQuantity(myVoucher.getQuantity() + 1);
+                availableVoucherRepository.save(myVoucher);
+            }
+        }
+
+        List<OrderDetails> details = orderDetailsRepository.findByOrders_IdOrders(idOrder);
+        List<Long> productIds = details.stream().map(d -> d.getProduct().getIdProduct()).toList();
+        List<Stock> stocks = stockRepository.findByProduct_IdProductIn(productIds);
+
+        Map<Long, Stock> stockMap = new HashMap<>();
+        for (Stock stock : stocks) {
+            stockMap.put(stock.getProduct().getIdProduct(), stock);
+        }
+
+        for (OrderDetails detail : details) {
+            Stock stock = stockMap.get(detail.getProduct().getIdProduct());
+            if (stock != null) {
+                stock.setStockQuantity(stock.getStockQuantity() + detail.getQuantity());
+            }
+        }
+
+        stockRepository.saveAll(stockMap.values());
+
+        return "Hủy đơn hàng số " + idOrder + " thành công! Toàn bộ sản phẩm và Voucher đã được hoàn trả.";
     }
 }

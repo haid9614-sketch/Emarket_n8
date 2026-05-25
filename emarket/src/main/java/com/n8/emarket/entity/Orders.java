@@ -38,17 +38,16 @@ public class Orders {
     private Integer isDelete = 0;
     @Column(name = "receiver_name")
     private String receiverName;
-
     @Column(name = "receiver_phone")
     private String receiverPhone;
-
     @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;
-
     @Column(name = "payment_method")
     private String paymentMethod;
-
     @Column(name = "note")
     private String note;
+    @ManyToOne
+    @JoinColumn(name = "id_voucher")
+    private Voucher voucher;
 }
 

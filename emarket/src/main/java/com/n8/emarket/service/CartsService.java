@@ -33,7 +33,7 @@ public class CartsService {
         if (stock == null || stock.getStockQuantity() < request.getQuantity()) {
             throw new RuntimeException("Sản phẩm không tồn tại hoặc không đủ số lượng trong kho!");
         }
-        // Tìm hoặc tạo Giỏ hàng
+
         Carts cart = cartsRepository.findByCustomer_IdCustomer(request.getIdCustomer());
         if (cart == null) {
             Customer customer = customerRepository.findById(request.getIdCustomer())
@@ -42,7 +42,7 @@ public class CartsService {
             cart.setCustomer(customer);
             cart = cartsRepository.save(cart);
         }
-        // cộng dồn hàng hóa nếu thêm 1 sản phẩm >= 2
+
         CartItems cartItem = cartItemsRepository.findByCart_IdCartsAndProduct_IdProduct(
                 cart.getIdCarts(),
                 request.getIdProduct()
