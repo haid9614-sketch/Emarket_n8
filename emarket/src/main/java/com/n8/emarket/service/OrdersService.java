@@ -23,6 +23,7 @@ public class OrdersService {
     @Autowired private CustomerRepository customerRepository;
     @Autowired private AddressRepository addressRepository;
     @Autowired private AvailableVoucherRepository availableVoucherRepository;
+    @Autowired private BranchRepository branchRepository;
 
     // ham thanh toan dat hang
     @Transactional
@@ -35,7 +36,7 @@ public class OrdersService {
         if (cartItemsList.isEmpty()) throw new RuntimeException("Giỏ hàng không có sản phẩm nào để thanh toán!");
 
         List<Long> productIds = cartItemsList.stream().map(item -> item.getProduct().getIdProduct()).toList();
-        List<Stock> stocks = stockRepository.findByProduct_IdProductIn(productIds);
+        List<Stock> stocks = stockRepository.findByProduct_IdProductInAndBranch_IdBranch(productIds, request.getIdBranch());
 
         Map<Long, Stock> stockMap = new HashMap<>();
         for (Stock stock : stocks) {
@@ -99,6 +100,9 @@ public class OrdersService {
         order.setCreatedAt(LocalDateTime.now());
         order.setIsDelete(0);
         order.setTotal(finalPrice);
+        Branch branch = branchRepository.findById(request.getIdBranch())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chi nhánh này trong hệ thống!"));
+        order.setBranch(branch);
 
         order = ordersRepository.save(order);
 
@@ -204,5 +208,70 @@ public class OrdersService {
         stockRepository.saveAll(stockMap.values());
 
         return "Hủy đơn hàng số " + idOrder + " thành công! Toàn bộ sản phẩm và Voucher đã được hoàn trả.";
+    }
+
+    // cho nhan vien
+    // ham lay danh sach don hang theo chi nhanh cho nhan vien theo trang thai
+    public List<OrderResponse> getOrdersForStaff(Long idBranch, String status) {
+        List<Orders> ordersList;
+
+        if (status != null && !status.trim().isEmpty()) {
+            ordersList = ordersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(
+                    idBranch,
+                    status.trim().toUpperCase(),
+                    0
+            );
+        }
+        else {
+            ordersList = ordersRepository.findByBranch_IdBranchAndIsDeleteOrderByCreatedAtDesc(idBranch, 0);
+        }
+
+        List<OrderResponse> responseList = new ArrayList<>();
+        for (Orders order : ordersList) {
+            OrderResponse orderDto = new OrderResponse();
+            orderDto.setIdOrders(order.getIdOrders());
+            orderDto.setReceiverName(order.getReceiverName());
+            orderDto.setReceiverPhone(order.getReceiverPhone());
+            orderDto.setShippingAddress(order.getShippingAddress());
+            orderDto.setPaymentMethod(order.getPaymentMethod());
+            orderDto.setStatus(order.getStatus());
+            orderDto.setTotal(order.getTotal());
+            orderDto.setNote(order.getNote());
+            orderDto.setCreatedAt(order.getCreatedAt());
+
+            List<OrderDetails> details = orderDetailsRepository.findByOrders_IdOrders(order.getIdOrders());
+            List<OrderResponse.OrderDetailItem> itemDtos = new ArrayList<>();
+            for (OrderDetails detail : details) {
+                OrderResponse.OrderDetailItem itemDto = new OrderResponse.OrderDetailItem();
+                itemDto.setProductName(detail.getProduct().getName());
+                itemDto.setQuantity(detail.getQuantity());
+                itemDto.setPrice(detail.getPrice());
+                itemDtos.add(itemDto);
+            }
+            orderDto.setItems(itemDtos);
+            responseList.add(orderDto);
+        }
+        return responseList;
+    }
+
+
+    // ham cap nhap trang thai don hang cho nhan vien
+    @Transactional
+    public String updateOrderStatus(Long idOrder, String newStatus, Long idBranch) {
+        Orders order = ordersRepository.findById(idOrder)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng!"));
+
+        if (!order.getBranch().getIdBranch().equals(idBranch)) {
+            throw new RuntimeException("Bạn không có quyền thao tác trên đơn hàng của chi nhánh khác!");
+        }
+
+        if ("CANCELLED".equals(order.getStatus())) {
+            throw new RuntimeException("Khách hàng đã hủy đơn này, không thể cập nhật trạng thái!");
+        }
+
+        order.setStatus(newStatus.toUpperCase());
+        ordersRepository.save(order);
+
+        return "Cập nhật trạng thái đơn hàng số " + idOrder + " thành " + newStatus + " thành công!";
     }
 }

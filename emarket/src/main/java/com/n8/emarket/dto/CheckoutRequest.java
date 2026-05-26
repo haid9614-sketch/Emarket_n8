@@ -11,9 +11,12 @@ public class CheckoutRequest {
     private Long idAddress;
 
     private Long idVoucher;
+
+    private Long idBranch;
     // frontend
     @NotBlank(message = "Vui lòng chọn phương thức thanh toán!")
     private String paymentMethod;
 
     private String note;
+
 }

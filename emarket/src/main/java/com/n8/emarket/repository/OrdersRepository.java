@@ -7,4 +7,10 @@ import java.util.List;
 @Repository
 public interface OrdersRepository extends JpaRepository<Orders, Long> {
     List<Orders> findByCustomer_IdCustomerAndIsDeleteOrderByCreatedAtDesc(Long idCustomer, Integer isDelete);
+
+    // cho nhan vien
+    List<Orders> findByBranch_IdBranchAndIsDeleteOrderByCreatedAtDesc(Long idBranch, Integer isDelete);
+
+
+    List<Orders> findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(Long idBranch, String status, Integer isDelete);
 }
