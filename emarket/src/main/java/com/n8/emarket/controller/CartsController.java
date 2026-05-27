@@ -20,22 +20,24 @@ public class CartsController {
         return ResponseEntity.ok(resultMessage);
     }
 
-    // api xem gio hang http://localhost:8080/api/carts/1 (với 1 là ID khách)
+    // api xem gio hang http://localhost:8080/api/carts/1?idBranch=1
     @GetMapping("/{idCustomer}")
-    public ResponseEntity<CartsResponse> getCart(@PathVariable Long idCustomer) {
-        CartsResponse cart = cartsService.getCartsByCustomerId(idCustomer);
+    public ResponseEntity<CartsResponse> getCart(@PathVariable Long idCustomer,
+                                                 @RequestParam(name = "idBranch") Long idBranch) {
+        CartsResponse cart = cartsService.getCartsByCustomerId(idCustomer, idBranch);
         return ResponseEntity.ok(cart);
     }
 
     // API Sửa số lượng (PUT)
-    // URL: http://localhost:8080/api/carts/update?idCustomer=1&idProduct=1&quantity=5
+    // URL: http://localhost:8080/api/carts/update?idCustomer=1&idProduct=1&idBranch=1&newQuantity=10
     @PutMapping("/update")
-    public ResponseEntity<String> updateQuantity(
-            @RequestParam Long idCustomer,
-            @RequestParam Long idProduct,
-            @RequestParam Integer quantity) {
-
-        return ResponseEntity.ok(cartsService.updateQuantity(idCustomer, idProduct, quantity));
+    public ResponseEntity<String> updateCartQuantity(
+            @RequestParam(name = "idCustomer") Long idCustomer,
+            @RequestParam(name = "idProduct") Long idProduct,
+            @RequestParam(name = "idBranch") Long idBranch,
+            @RequestParam(name = "newQuantity") Integer newQuantity
+    ) {
+        return ResponseEntity.ok(cartsService.updateQuantity(idCustomer, idProduct, idBranch, newQuantity));
     }
 
     // API Xóa sản phẩm (DELETE)

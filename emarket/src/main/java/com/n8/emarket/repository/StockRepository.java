@@ -12,6 +12,9 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     // lấy list theo id san pham
     List<Stock> findByProduct_IdProductIn(List<Long> idProducts);
 
+    // lấy 1 stock theo branch
+    Stock findByProduct_IdProductAndBranch_IdBranch(Long idProduct, Long idBranch);
+
     // lấy list theo branch
     List<Stock> findByProduct_IdProductInAndBranch_IdBranch(List<Long> ids, Long idBranch);
 }

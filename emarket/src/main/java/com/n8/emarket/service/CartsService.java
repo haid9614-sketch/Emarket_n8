@@ -28,10 +28,13 @@ public class CartsService {
     // thêm sản phẩm vào giỏ
     @Transactional
     public String addToCart(AddToCartRequest request) {
-        // hàm kiểm tra Tồn kho
-        Stock stock = stockRepository.findByProduct_IdProduct(request.getIdProduct());
-        if (stock == null || stock.getStockQuantity() < request.getQuantity()) {
-            throw new RuntimeException("Sản phẩm không tồn tại hoặc không đủ số lượng trong kho!");
+        Stock stock = stockRepository.findByProduct_IdProductAndBranch_IdBranch(
+                request.getIdProduct(),
+                request.getIdBranch()
+        );
+
+        if (stock == null) {
+            throw new RuntimeException("Sản phẩm này hiện không kinh doanh tại chi nhánh bạn chọn!");
         }
 
         Carts cart = cartsRepository.findByCustomer_IdCustomer(request.getIdCustomer());
@@ -48,11 +51,18 @@ public class CartsService {
                 request.getIdProduct()
         );
 
+        int totalQuantityWanted = request.getQuantity();
         if (cartItem != null) {
-            // Sản phẩm đã có trong giỏ -> Cộng dồn số lượng mới vào số lượng cũ
-            cartItem.setQuantity(cartItem.getQuantity() + request.getQuantity());
+            totalQuantityWanted += cartItem.getQuantity();
+        }
+
+        if (stock.getStockQuantity() < totalQuantityWanted) {
+            throw new RuntimeException("Thất bại! Chi nhánh này chỉ còn " + stock.getStockQuantity() + " sản phẩm.");
+        }
+
+        if (cartItem != null) {
+            cartItem.setQuantity(totalQuantityWanted);
         } else {
-            // Sản phẩm chưa có trong giỏ -> Tạo mới một dòng CartItem
             Product product = productRepository.findById(request.getIdProduct())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm!"));
             cartItem = new CartItems();
@@ -60,12 +70,14 @@ public class CartsService {
             cartItem.setProduct(product);
             cartItem.setQuantity(request.getQuantity());
         }
+
         cartItemsRepository.save(cartItem);
-        return "Đã thêm thành công " + request.getQuantity() + " sản phẩm vào giỏ hàng!";
+        return "Đã thêm thành công sản phẩm vào giỏ hàng!";
     }
 
+
     // hàm xem gio hang
-    public CartsResponse getCartsByCustomerId(Long idCustomer) {
+    public CartsResponse getCartsByCustomerId(Long idCustomer, Long idBranch) {
         CartsResponse cartsResponse = new CartsResponse();
 
         Carts cart = cartsRepository.findByCustomer_IdCustomer(idCustomer);
@@ -87,8 +99,7 @@ public class CartsService {
                 .map(item -> item.getProduct().getIdProduct())
                 .toList();
 
-        List<Stock> stocks = stockRepository.findByProduct_IdProductIn(productIds);
-
+        List<Stock> stocks = stockRepository.findByProduct_IdProductInAndBranch_IdBranch(productIds, idBranch);
 
         Map<Long, Stock> stockMap = new HashMap<>();
         for (Stock stock : stocks) {
@@ -105,6 +116,8 @@ public class CartsService {
             itemDto.setProductName(item.getProduct().getName());
             itemDto.setImageUrl(item.getProduct().getImageUrl());
             itemDto.setPrice(item.getProduct().getPrice());
+
+            itemDto.setQuantity(item.getQuantity());
 
             Double subTotal = item.getProduct().getPrice() * item.getQuantity();
             itemDto.setSubTotal(subTotal);
@@ -132,11 +145,16 @@ public class CartsService {
 
     // hàm Cập nhật số lượng
     @Transactional
-    public String updateQuantity(Long idCustomer, Long idProduct, Integer newQuantity) {
+    public String updateQuantity(Long idCustomer, Long idProduct, Long idBranch, Integer newQuantity) {
 
-        Stock stock = stockRepository.findByProduct_IdProduct(idProduct);
-        if (stock == null || stock.getStockQuantity() < newQuantity) {
-            throw new RuntimeException("Kho không đủ hàng để cập nhật!");
+        Stock stock = stockRepository.findByProduct_IdProductAndBranch_IdBranch(idProduct, idBranch);
+
+        if (stock == null) {
+            throw new RuntimeException("Sản phẩm này hiện không kinh doanh tại chi nhánh bạn chọn!");
+        }
+
+        if (stock.getStockQuantity() < newQuantity) {
+            throw new RuntimeException("Thất bại! Chi nhánh này chỉ còn " + stock.getStockQuantity() + " sản phẩm.");
         }
 
         Carts cart = cartsRepository.findByCustomer_IdCustomer(idCustomer);

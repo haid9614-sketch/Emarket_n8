@@ -14,4 +14,6 @@ public class AddToCartRequest {
     @NotNull(message = "Vui lòng nhập số lượng!")
     @Min(value = 1, message = "Số lượng mua ít nhất phải là 1!")
     private Integer quantity;
+
+    private Long idBranch;
 }
