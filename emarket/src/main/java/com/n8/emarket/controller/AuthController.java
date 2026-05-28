@@ -2,6 +2,7 @@ package com.n8.emarket.controller;
 
 import com.n8.emarket.dto.LoginRequest;
 import com.n8.emarket.dto.JwtResponse;
+import com.n8.emarket.dto.RegisterRequest;
 import com.n8.emarket.entity.Customer;
 import com.n8.emarket.entity.Sales;
 import com.n8.emarket.repository.CustomerRepository;
@@ -11,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -53,4 +56,31 @@ public class AuthController {
         String token = jwtUtils.generateToken(sales.getEmail(), "ROLE_SALES", sales.getBranch().getIdBranch(), sales.getIdSales());
         return ResponseEntity.ok(new JwtResponse(token, "ROLE_SALES", sales.getIdSales(), sales.getBranch().getIdBranch()));
     }
+
+    // dang ky
+    @PostMapping("/customer/register")
+    public ResponseEntity<?> registerCustomer(@RequestBody RegisterRequest request) {
+
+        Customer existingCustomer = customerRepository.findByEmail(request.getEmail());
+        if (existingCustomer != null) {
+            return ResponseEntity.badRequest().body("Thất bại! Email này đã được sử dụng.");
+        }
+
+        Customer newCustomer = new Customer();
+        newCustomer.setName(request.getName());
+        newCustomer.setEmail(request.getEmail());
+        newCustomer.setPhone(request.getPhone());
+        newCustomer.setAge(request.getAge());
+        newCustomer.setIsDelete(0);
+        newCustomer.setCreatedAt(LocalDateTime.now());
+        newCustomer.setUpdatedAt(LocalDateTime.now());
+
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        newCustomer.setPassword(encodedPassword);
+
+        customerRepository.save(newCustomer);
+
+        return ResponseEntity.ok("Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.");
+    }
+
 }

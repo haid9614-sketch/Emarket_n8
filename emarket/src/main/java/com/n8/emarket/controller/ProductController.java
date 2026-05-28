@@ -12,7 +12,7 @@ public class ProductController {
     @Autowired
     private ProductService productService;
     // API (GET):
-    // tat ca:  http://localhost:8080/api/products?page=0&size=10
+    // tat ca:  http://localhost:8080/api/products?page=0&size=10  + &idBranch=.. vao tat ca
     // tim kiem: http://localhost:8080/api/products?keyword=Thịt
     // loc theo danh muc: http://localhost:8080/api/products?categoryId=1
     @GetMapping
@@ -28,11 +28,12 @@ public class ProductController {
     }
 
     // API Lấy chi tiết 1 sản phẩm
-    // GET http://localhost:8080/api/products/1
+    // GET http://localhost:8080/api/products/1?idBranch=1
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(
-            @PathVariable(name = "id") Long id
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "idBranch") Long idBranch
     ) {
-        return ResponseEntity.ok(productService.getProductDetail(id));
+        return ResponseEntity.ok(productService.getProductDetail(id, idBranch));
     }
 }
