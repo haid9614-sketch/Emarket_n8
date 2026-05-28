@@ -27,7 +27,7 @@ public class CartsService {
 
     // thêm sản phẩm vào giỏ
     @Transactional
-    public String addToCart(AddToCartRequest request) {
+    public String addToCart(AddToCartRequest request, Long idCustomer) {
         Stock stock = stockRepository.findByProduct_IdProductAndBranch_IdBranch(
                 request.getIdProduct(),
                 request.getIdBranch()
@@ -37,9 +37,9 @@ public class CartsService {
             throw new RuntimeException("Sản phẩm này hiện không kinh doanh tại chi nhánh bạn chọn!");
         }
 
-        Carts cart = cartsRepository.findByCustomer_IdCustomer(request.getIdCustomer());
+        Carts cart = cartsRepository.findByCustomer_IdCustomer(idCustomer);
         if (cart == null) {
-            Customer customer = customerRepository.findById(request.getIdCustomer())
+            Customer customer = customerRepository.findById(idCustomer)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng trong hệ thống!"));
             cart = new Carts();
             cart.setCustomer(customer);

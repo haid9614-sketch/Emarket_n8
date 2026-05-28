@@ -27,9 +27,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 String email = jwtUtils.getEmailFromToken(jwt);
                 String role = jwtUtils.getRoleFromToken(jwt);
+                Long idUser = jwtUtils.getIdUserFromToken(jwt);
+                Long idBranch = jwtUtils.getIdBranchFromToken(jwt);
+
+                CustomUserDetails userDetails = new CustomUserDetails(idUser, email, null, role, idBranch);
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        email, null, Collections.singletonList(new SimpleGrantedAuthority(role)));
+                        userDetails, null, userDetails.getAuthorities());
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

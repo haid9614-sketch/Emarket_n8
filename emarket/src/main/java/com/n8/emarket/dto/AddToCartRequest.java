@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 @Data
 public class AddToCartRequest {
-    @NotNull(message = "Thiếu thông tin khách hàng!")
-    private Long idCustomer;
+//    @NotNull(message = "Thiếu thông tin khách hàng!")
+//    private Long idCustomer;
 
     @NotNull(message = "Thiếu thông tin sản phẩm!")
     private Long idProduct;

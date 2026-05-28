@@ -32,6 +32,13 @@ public class JwtUtils {
     public String getRoleFromToken(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().get("role", String.class);
     }
+    public Long getIdUserFromToken(String token) {
+        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().get("idUser", Long.class);
+    }
+
+    public Long getIdBranchFromToken(String token) {
+        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().get("idBranch", Long.class);
+    }
 
     public boolean validateJwtToken(String authToken) {
         try {

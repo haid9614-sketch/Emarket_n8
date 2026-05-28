@@ -4,8 +4,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 @Data
 public class CheckoutRequest {
-    @NotNull(message = "Thiếu thông tin khách hàng!")
-    private Long idCustomer;
+//    @NotNull(message = "Thiếu thông tin khách hàng!")
+//    private Long idCustomer;
 
     @NotNull(message = "Vui lòng chọn địa chỉ giao hàng!")
     private Long idAddress;

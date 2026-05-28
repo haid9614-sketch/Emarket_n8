@@ -27,9 +27,10 @@ public class OrdersService {
 
     // ham thanh toan dat hang
     @Transactional
-    public String checkout(CheckoutRequest request) {
+    public String checkout(CheckoutRequest request, Long idCustomer) {
 
-        Carts cart = cartsRepository.findByCustomer_IdCustomer(request.getIdCustomer());
+        Carts cart = cartsRepository.findByCustomer_IdCustomer(idCustomer);
+
         if (cart == null) throw new RuntimeException("Giỏ hàng của bạn đang trống rỗng!");
 
         List<CartItems> cartItemsList = cartItemsRepository.findByCart_IdCarts(cart.getIdCarts());
