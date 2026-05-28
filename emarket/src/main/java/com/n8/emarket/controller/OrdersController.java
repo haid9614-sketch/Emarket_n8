@@ -36,7 +36,7 @@ public class OrdersController {
     }
 
     @PostMapping("/cancel")
-    public ResponseEntity<String> cancelOrder(@RequestParam Long idOrder) {
+    public ResponseEntity<String> cancelOrder(@RequestParam(name = "idOrder") Long idOrder) {
         String result = ordersService.cancelOrder(idOrder, getCurrentCustomerId());
         return ResponseEntity.ok(result);
     }

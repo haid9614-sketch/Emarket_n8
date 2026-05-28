@@ -54,11 +54,11 @@ public class OrdersService {
         Address address = addressRepository.findById(request.getIdAddress())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ giao hàng trong hệ thống!"));
 
-        if (!address.getCustomer().getIdCustomer().equals(request.getIdCustomer())) {
+        if (!address.getCustomer().getIdCustomer().equals(idCustomer)) {
             throw new RuntimeException("Địa chỉ giao hàng không hợp lệ cho tài khoản này!");
         }
 
-        Customer customer = customerRepository.findById(request.getIdCustomer())
+        Customer customer = customerRepository.findById(idCustomer)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin khách hàng!"));
 
         Double totalPrice = 0.0;
@@ -71,7 +71,7 @@ public class OrdersService {
         if (request.getIdVoucher() != null) {
 
             AvailableVoucher myVoucher = availableVoucherRepository
-                    .findByCustomer_IdCustomerAndVoucher_IdVoucher(request.getIdCustomer(), request.getIdVoucher());
+                    .findByCustomer_IdCustomerAndVoucher_IdVoucher(idCustomer, request.getIdVoucher());
 
             if (myVoucher == null || myVoucher.getQuantity() <= 0) {
                 throw new RuntimeException("Bạn không sở hữu Voucher này hoặc đã dùng hết lượt!");
@@ -192,7 +192,10 @@ public class OrdersService {
 
         List<OrderDetails> details = orderDetailsRepository.findByOrders_IdOrders(idOrder);
         List<Long> productIds = details.stream().map(d -> d.getProduct().getIdProduct()).toList();
-        List<Stock> stocks = stockRepository.findByProduct_IdProductIn(productIds);
+
+        Long idBranchOfOrder = order.getBranch().getIdBranch();
+
+        List<Stock> stocks = stockRepository.findByProduct_IdProductInAndBranch_IdBranch(productIds, idBranchOfOrder);
 
         Map<Long, Stock> stockMap = new HashMap<>();
         for (Stock stock : stocks) {
