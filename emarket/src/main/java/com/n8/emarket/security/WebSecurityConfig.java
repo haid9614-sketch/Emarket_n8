@@ -31,8 +31,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/error").permitAll()
                         .requestMatchers("/api/saler/**").hasAuthority("ROLE_SALES")
-                        .requestMatchers("/api/carts/**", "/api/orders/**").hasAuthority("ROLE_CUSTOMER")
-                        .requestMatchers("/api/carts/**", "/api/orders/**", "/api/addresses/**").hasAuthority("ROLE_CUSTOMER")
+                        .requestMatchers("/api/carts/**", "/api/orders/**", "/api/addresses/**", "/api/voucher/**").hasAuthority("ROLE_CUSTOMER")
                         .anyRequest().authenticated()
                 );
 
