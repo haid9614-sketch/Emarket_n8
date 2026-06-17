@@ -10,4 +10,6 @@ public class AddressRequest {
     private String ward;
     private String district;
     private String city;
+    private String name;
+    private String sdt;
 }

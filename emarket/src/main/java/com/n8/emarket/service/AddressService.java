@@ -38,6 +38,8 @@ public class AddressService {
         newAddress.setDistrict(request.getDistrict());
         newAddress.setCity(request.getCity());
         newAddress.setIsDelete(0);
+        newAddress.setName(request.getName());
+        newAddress.setSdt(request.getSdt());
 
         addressRepository.save(newAddress);
         return "Thêm địa chỉ giao hàng thành công!";

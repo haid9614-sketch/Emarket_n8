@@ -37,4 +37,8 @@ public class Address {
     private LocalDateTime updatedAt;
     @Column(name = "is_delete")
     private Integer isDelete = 0;
+    @Column(name = "name")
+    private String name;
+    @Column(name = "sdt")
+    private String sdt;
 }
