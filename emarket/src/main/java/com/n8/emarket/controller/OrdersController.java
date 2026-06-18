@@ -31,8 +31,8 @@ public class OrdersController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<OrderResponse>> getHistory() {
-        return ResponseEntity.ok(ordersService.getOrderHistory(getCurrentCustomerId()));
+    public ResponseEntity<List<OrderResponse>> getHistory(@RequestParam(name = "status") String status) {
+        return ResponseEntity.ok(ordersService.getOrderHistory(getCurrentCustomerId(), status));
     }
 
     @PostMapping("/cancel")

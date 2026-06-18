@@ -89,8 +89,8 @@ public class OrdersService {
         }
 
         order.setCustomer(customer);
-        order.setReceiverName(customer.getName());
-        order.setReceiverPhone(customer.getPhone());
+        order.setReceiverName(address.getName());
+        order.setReceiverPhone(address.getSdt());
 
         String fullShippingAddress = address.getHouseNumber() + ", " + address.getWard() + ", " + address.getDistrict() + ", " + address.getCity();
         order.setShippingAddress(fullShippingAddress);
@@ -131,8 +131,8 @@ public class OrdersService {
     }
 
     // ham xem don da dat
-    public List<OrderResponse> getOrderHistory(Long idCustomer) {
-        List<Orders> ordersList = ordersRepository.findByCustomer_IdCustomerAndIsDeleteOrderByCreatedAtDesc(idCustomer, 0);
+    public List<OrderResponse> getOrderHistory(Long idCustomer, String status) {
+        List<Orders> ordersList = ordersRepository.findByCustomer_IdCustomerAndStatusAndIsDeleteOrderByCreatedAtDesc(idCustomer, status, 0);
         List<OrderResponse> responseList = new ArrayList<>();
 
         for (Orders order : ordersList) {
