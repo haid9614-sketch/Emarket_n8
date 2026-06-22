@@ -29,7 +29,7 @@ public class WebSecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/error").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/products/**", "/error").permitAll()
                         .requestMatchers("/api/saler/**").hasAuthority("ROLE_SALES")
                         .requestMatchers("/api/carts/**", "/api/orders/**", "/api/addresses/**", "/api/voucher/**").hasAuthority("ROLE_CUSTOMER")
                         .anyRequest().authenticated()
