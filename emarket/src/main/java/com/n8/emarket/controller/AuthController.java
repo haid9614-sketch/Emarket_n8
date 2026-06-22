@@ -8,6 +8,7 @@ import com.n8.emarket.entity.Sales;
 import com.n8.emarket.repository.CustomerRepository;
 import com.n8.emarket.repository.SalesRepository;
 import com.n8.emarket.security.JwtUtils;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -59,7 +60,7 @@ public class AuthController {
 
     // dang ky
     @PostMapping("/customer/register")
-    public ResponseEntity<?> registerCustomer(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> registerCustomer(@Valid @RequestBody RegisterRequest request) {
 
         Customer existingCustomer = customerRepository.findByEmail(request.getEmail());
         if (existingCustomer != null) {
