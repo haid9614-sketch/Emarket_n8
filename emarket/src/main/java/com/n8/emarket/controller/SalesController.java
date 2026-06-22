@@ -3,6 +3,7 @@ package com.n8.emarket.controller;
 import com.n8.emarket.dto.OrderResponse;
 import com.n8.emarket.service.SalesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,14 +17,16 @@ public class SalesController {
     private SalesService salesService;
 
     // nhan vien tai danh sanh don hang + loc trang thai
-    // xem tat ca GET  http://localhost:8080/api/sales/orders/branch/1
-    // Lọc theo trạng thái GET  http://localhost:8080/api/sales/orders/branch/1?status=PENDING
+    // xem tat ca GET  http://localhost:8080/api/sales/orders/branch/1?page=0&size=10
+    // Lọc theo trạng thái GET  http://localhost:8080/api/sales/orders/branch/1?status=PENDING&page=0&size=10
     @GetMapping("/branch/{idBranch}")
-    public ResponseEntity<List<OrderResponse>> getOrdersByBranch(
+    public ResponseEntity<Page<OrderResponse>> getOrdersByBranch(
             @PathVariable(name = "idBranch") Long idBranch,
-            @RequestParam(name = "status", required = false) String status
+            @RequestParam(name = "status", required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(salesService.getOrdersForStaff(idBranch, status));
+        return ResponseEntity.ok(salesService.getOrdersForStaff(idBranch, status, page, size));
     }
 
     // API cap nhap trang thai don hang:

@@ -8,6 +8,9 @@ import com.n8.emarket.repository.AvailableVoucherRepository;
 import com.n8.emarket.repository.OrderDetailsRepository;
 import com.n8.emarket.repository.OrdersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,23 +30,26 @@ public class SalesService {
     private AvailableVoucherRepository availableVoucherRepository;
 
     // ham lay danh sanh don loc theo trang thai
-    public List<OrderResponse> getOrdersForStaff(Long idBranch, String status) {
-        List<Orders> ordersList;
+    public Page<OrderResponse> getOrdersForStaff(Long idBranch, String status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Orders> ordersPage;
 
         if (status != null && !status.trim().isEmpty()) {
-            ordersList = ordersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(
+            ordersPage = ordersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(
                     idBranch,
                     status.trim().toUpperCase(),
-                    0
+                    0,
+                    pageable
+            );
+        } else {
+            ordersPage = ordersRepository.findByBranch_IdBranchAndIsDeleteOrderByCreatedAtDesc(
+                    idBranch,
+                    0,
+                    pageable
             );
         }
 
-        else {
-            ordersList = ordersRepository.findByBranch_IdBranchAndIsDeleteOrderByCreatedAtDesc(idBranch, 0);
-        }
-
-        List<OrderResponse> responseList = new ArrayList<>();
-        for (Orders order : ordersList) {
+        return ordersPage.map(order -> {
             OrderResponse orderDto = new OrderResponse();
             orderDto.setIdOrders(order.getIdOrders());
             orderDto.setReceiverName(order.getReceiverName());
@@ -65,9 +71,9 @@ public class SalesService {
                 itemDtos.add(itemDto);
             }
             orderDto.setItems(itemDtos);
-            responseList.add(orderDto);
-        }
-        return responseList;
+
+            return orderDto;
+        });
     }
 
     // ham cap nhap trang thai don hang
