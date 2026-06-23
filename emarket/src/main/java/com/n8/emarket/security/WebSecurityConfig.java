@@ -31,7 +31,7 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/products/**", "/error").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/products/**","/api/branches/**", "/error").permitAll()
                         .requestMatchers("/api/saler/**").hasAuthority("ROLE_SALES")
                         .requestMatchers("/api/carts/**", "/api/orders/**", "/api/addresses/**", "/api/voucher/**").hasAuthority("ROLE_CUSTOMER")
                         .anyRequest().authenticated()
