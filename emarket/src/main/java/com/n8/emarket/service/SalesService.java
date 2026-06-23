@@ -68,6 +68,7 @@ public class SalesService {
                 itemDto.setProductName(detail.getProduct().getName());
                 itemDto.setQuantity(detail.getQuantity());
                 itemDto.setPrice(detail.getProduct().getPrice());
+                itemDto.setImageUrl(detail.getProduct().getImageUrl());
                 itemDtos.add(itemDto);
             }
             orderDto.setItems(itemDtos);
