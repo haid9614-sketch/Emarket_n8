@@ -23,8 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SalesServiceTest {
@@ -39,222 +38,171 @@ class SalesServiceTest {
     @InjectMocks
     private SalesService salesServiceUnderTest;
 
+
+    // 1. TEST LUỒNG LẤY DANH SÁCH ĐƠN HÀNG (CÓ PHÂN TRANG)
+
+
     @Test
-    void testGetOrdersForStaff() {
-        // Setup
-        // Configure OrdersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(...).
-        final Orders orders1 = new Orders();
-        orders1.setIdOrders(0L);
-        orders1.setTotal(0.0);
-        orders1.setStatus("status");
-        final Customer customer = new Customer();
-        customer.setIdCustomer(0L);
-        orders1.setCustomer(customer);
-        final Branch branch = new Branch();
-        branch.setIdBranch(0L);
-        orders1.setBranch(branch);
-        orders1.setCreatedAt(LocalDateTime.of(2020, 1, 1, 0, 0, 0));
-        orders1.setReceiverName("receiverName");
-        orders1.setReceiverPhone("receiverPhone");
-        orders1.setShippingAddress("shippingAddress");
-        orders1.setPaymentMethod("paymentMethod");
-        orders1.setNote("note");
+    void testGetOrdersForStaff_WithSpecificStatus() {
+        // Kịch bản: Nhân viên muốn lọc ra các đơn đang "PENDING"
+        final Orders order = createMockOrder(1L, "PENDING", 1L);
+        final Page<Orders> ordersPage = new PageImpl<>(List.of(order));
+
+        // Báo cho kho biết là nếu tìm đơn "PENDING" thì trả về danh sách có 1 đơn này
+        when(mockOrdersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(
+                eq(1L), eq("PENDING"), eq(0), any(Pageable.class))).thenReturn(ordersPage);
+
+        // Giả lập chi tiết đơn hàng
+        final OrderDetails orderDetails = createMockOrderDetails();
+        when(mockOrderDetailsRepository.findByOrders_IdOrders(1L)).thenReturn(List.of(orderDetails));
+
+        // Thực thi
+        final Page<OrderResponse> result = salesServiceUnderTest.getOrdersForStaff(1L, "PENDING", 0, 10);
+
+        // Kiểm tra
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getStatus()).isEqualTo("PENDING");
+        assertThat(result.getContent().get(0).getItems().get(0).getProductName()).isEqualTo("Sản phẩm Test");
+    }
+
+    @Test
+    void testGetOrdersForStaff_WithoutStatus() {
+        // Kịch bản: Nhân viên không chọn trạng thái (Lấy tất cả đơn của chi nhánh)
+        final Orders order = createMockOrder(1L, "SHIPPING", 1L);
+        final Page<Orders> ordersPage = new PageImpl<>(List.of(order));
+
+        when(mockOrdersRepository.findByBranch_IdBranchAndIsDeleteOrderByCreatedAtDesc(
+                eq(1L), eq(0), any(Pageable.class))).thenReturn(ordersPage);
+
+        when(mockOrderDetailsRepository.findByOrders_IdOrders(1L)).thenReturn(Collections.emptyList());
+
+        // Thực thi (Truyền status = null)
+        final Page<OrderResponse> result = salesServiceUnderTest.getOrdersForStaff(1L, null, 0, 10);
+
+        // Kiểm tra
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getStatus()).isEqualTo("SHIPPING");
+    }
+
+
+    // 2. TEST LUỒNG CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG
+
+
+    @Test
+    void testUpdateOrderStatus_Success() {
+        // Kịch bản: Cập nhật thành công từ PENDING sang SHIPPING
+        final Orders order = createMockOrder(1L, "PENDING", 1L);
+        when(mockOrdersRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        // Thực thi
+        final String result = salesServiceUnderTest.updateOrderStatus(1L, "SHIPPING", 1L);
+
+        // Kiểm tra
+        assertThat(result).isEqualTo("Cập nhật trạng thái đơn hàng số 1 thành SHIPPING thành công!");
+        assertThat(order.getStatus()).isEqualTo("SHIPPING");
+        verify(mockOrdersRepository).save(order);
+    }
+
+    @Test
+    void testUpdateOrderStatus_Cancel_And_RestoreVoucher() {
+        // Kịch bản: Hủy đơn hàng và hệ thống phải hoàn lại Voucher cho khách
+        final Orders order = createMockOrder(1L, "PENDING", 1L);
+
+        // Khách hàng có áp dụng 1 Voucher vào đơn này
         final Voucher voucher = new Voucher();
-        voucher.setIdVoucher(0L);
-        orders1.setVoucher(voucher);
-        final Page<Orders> orders = new PageImpl<>(List.of(orders1));
-        when(mockOrdersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(eq(0L), eq("status"),
-                eq(0), any(Pageable.class))).thenReturn(orders);
+        voucher.setIdVoucher(99L);
+        order.setVoucher(voucher);
 
-        // Configure OrdersRepository.findByBranch_IdBranchAndIsDeleteOrderByCreatedAtDesc(...).
-        final Orders orders3 = new Orders();
-        orders3.setIdOrders(0L);
-        orders3.setTotal(0.0);
-        orders3.setStatus("status");
-        final Customer customer1 = new Customer();
-        customer1.setIdCustomer(0L);
-        orders3.setCustomer(customer1);
-        final Branch branch1 = new Branch();
-        branch1.setIdBranch(0L);
-        orders3.setBranch(branch1);
-        orders3.setCreatedAt(LocalDateTime.of(2020, 1, 1, 0, 0, 0));
-        orders3.setReceiverName("receiverName");
-        orders3.setReceiverPhone("receiverPhone");
-        orders3.setShippingAddress("shippingAddress");
-        orders3.setPaymentMethod("paymentMethod");
-        orders3.setNote("note");
-        final Voucher voucher1 = new Voucher();
-        voucher1.setIdVoucher(0L);
-        orders3.setVoucher(voucher1);
-        final Page<Orders> orders2 = new PageImpl<>(List.of(orders3));
-        when(mockOrdersRepository.findByBranch_IdBranchAndIsDeleteOrderByCreatedAtDesc(eq(0L), eq(0),
-                any(Pageable.class))).thenReturn(orders2);
+        when(mockOrdersRepository.findById(1L)).thenReturn(Optional.of(order));
 
-        // Configure OrderDetailsRepository.findByOrders_IdOrders(...).
-        final OrderDetails orderDetails1 = new OrderDetails();
-        orderDetails1.setQuantity(0);
+        // Giả lập kho Voucher đang còn 0 lượt dùng
+        final AvailableVoucher myVoucher = new AvailableVoucher();
+        myVoucher.setQuantity(0);
+        when(mockAvailableVoucherRepository.findByCustomer_IdCustomerAndVoucher_IdVoucher(
+                order.getCustomer().getIdCustomer(), 99L)).thenReturn(myVoucher);
+
+        // Thực thi
+        final String result = salesServiceUnderTest.updateOrderStatus(1L, "CANCELLED", 1L);
+
+        // Kiểm tra
+        assertThat(result).isEqualTo("Cập nhật trạng thái đơn hàng số 1 thành CANCELLED thành công!");
+        assertThat(order.getStatus()).isEqualTo("CANCELLED");
+
+        // Cực kỳ quan trọng: Kiểm tra xem số lượng Voucher đã được cộng lại thành 1 chưa
+        assertThat(myVoucher.getQuantity()).isEqualTo(1);
+        verify(mockAvailableVoucherRepository).save(myVoucher);
+    }
+
+
+    // 3. CÁC KỊCH BẢN NÉM LỖI (BẮT BUG)
+
+    @Test
+    void testUpdateOrderStatus_Fail_WrongBranch() {
+        // Kịch bản: Nhân viên chi nhánh 2 cố tình sửa đơn của chi nhánh 1
+        final Orders order = createMockOrder(1L, "PENDING", 1L); // Đơn thuộc chi nhánh 1
+        when(mockOrdersRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        // Thực thi và kỳ vọng ném ra lỗi RuntimeException
+        assertThatThrownBy(() -> salesServiceUnderTest.updateOrderStatus(1L, "SHIPPING", 2L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Bạn không có quyền thao tác trên đơn hàng của chi nhánh khác!");
+
+        // Đảm bảo không có lệnh lưu DB nào được gọi
+        verify(mockOrdersRepository, never()).save(any());
+    }
+
+    @Test
+    void testUpdateOrderStatus_Fail_AlreadyCancelled() {
+        // Kịch bản: Đơn hàng đã bị hủy, không cho phép sửa nữa
+        final Orders order = createMockOrder(1L, "CANCELLED", 1L);
+        when(mockOrdersRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> salesServiceUnderTest.updateOrderStatus(1L, "DELIVERED", 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Đơn hàng này đã bị hủy từ trước, không thể thao tác thêm!");
+    }
+
+    @Test
+    void testUpdateOrderStatus_Fail_OrderNotFound() {
+        // Kịch bản: Tìm đơn hàng không tồn tại
+        when(mockOrdersRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> salesServiceUnderTest.updateOrderStatus(99L, "SHIPPING", 1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Không tìm thấy đơn hàng!");
+    }
+
+
+    // HÀM HỖ TRỢ TẠO DỮ LIỆU GIẢ NHANH (Helper Methods)
+
+    private Orders createMockOrder(Long idOrder, String status, Long idBranch) {
+        final Orders order = new Orders();
+        order.setIdOrders(idOrder);
+        order.setStatus(status);
+        order.setTotal(50000.0);
+        order.setCreatedAt(LocalDateTime.now());
+
+        final Branch branch = new Branch();
+        branch.setIdBranch(idBranch);
+        order.setBranch(branch);
+
+        final Customer customer = new Customer();
+        customer.setIdCustomer(1L);
+        order.setCustomer(customer);
+
+        return order;
+    }
+
+    private OrderDetails createMockOrderDetails() {
+        final OrderDetails details = new OrderDetails();
+        details.setQuantity(2);
+
         final Product product = new Product();
-        product.setName("name");
-        product.setPrice(0.0);
-        product.setImageUrl("imageUrl");
-        orderDetails1.setProduct(product);
-        final List<OrderDetails> orderDetails = List.of(orderDetails1);
-        when(mockOrderDetailsRepository.findByOrders_IdOrders(0L)).thenReturn(orderDetails);
+        product.setIdProduct(1L);
+        product.setName("Sản phẩm Test");
+        product.setPrice(25000.0);
+        details.setProduct(product);
 
-        // Run the test
-        final Page<OrderResponse> result = salesServiceUnderTest.getOrdersForStaff(0L, "status", 0, 0);
-
-        // Verify the results
-    }
-
-    @Test
-    void testGetOrdersForStaff_OrdersRepositoryFindByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDescReturnsNoItems() {
-        // Setup
-        when(mockOrdersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(eq(0L), eq("status"),
-                eq(0), any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
-
-        // Run the test
-        final Page<OrderResponse> result = salesServiceUnderTest.getOrdersForStaff(0L, "status", 0, 0);
-
-        // Verify the results
-    }
-
-    @Test
-    void testGetOrdersForStaff_OrdersRepositoryFindByBranch_IdBranchAndIsDeleteOrderByCreatedAtDescReturnsNoItems() {
-        // Setup
-        when(mockOrdersRepository.findByBranch_IdBranchAndIsDeleteOrderByCreatedAtDesc(eq(0L), eq(0),
-                any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
-
-        // Run the test
-        final Page<OrderResponse> result = salesServiceUnderTest.getOrdersForStaff(0L, "status", 0, 0);
-
-        // Verify the results
-    }
-
-    @Test
-    void testGetOrdersForStaff_OrderDetailsRepositoryReturnsNoItems() {
-        // Setup
-        // Configure OrdersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(...).
-        final Orders orders1 = new Orders();
-        orders1.setIdOrders(0L);
-        orders1.setTotal(0.0);
-        orders1.setStatus("status");
-        final Customer customer = new Customer();
-        customer.setIdCustomer(0L);
-        orders1.setCustomer(customer);
-        final Branch branch = new Branch();
-        branch.setIdBranch(0L);
-        orders1.setBranch(branch);
-        orders1.setCreatedAt(LocalDateTime.of(2020, 1, 1, 0, 0, 0));
-        orders1.setReceiverName("receiverName");
-        orders1.setReceiverPhone("receiverPhone");
-        orders1.setShippingAddress("shippingAddress");
-        orders1.setPaymentMethod("paymentMethod");
-        orders1.setNote("note");
-        final Voucher voucher = new Voucher();
-        voucher.setIdVoucher(0L);
-        orders1.setVoucher(voucher);
-        final Page<Orders> orders = new PageImpl<>(List.of(orders1));
-        when(mockOrdersRepository.findByBranch_IdBranchAndStatusAndIsDeleteOrderByCreatedAtDesc(eq(0L), eq("status"),
-                eq(0), any(Pageable.class))).thenReturn(orders);
-
-        when(mockOrderDetailsRepository.findByOrders_IdOrders(0L)).thenReturn(Collections.emptyList());
-
-        // Run the test
-        final Page<OrderResponse> result = salesServiceUnderTest.getOrdersForStaff(0L, "status", 0, 0);
-
-        // Verify the results
-    }
-
-    @Test
-    void testUpdateOrderStatus() {
-        // Setup
-        // Configure OrdersRepository.findById(...).
-        final Orders orders1 = new Orders();
-        orders1.setIdOrders(0L);
-        orders1.setTotal(0.0);
-        orders1.setStatus("status");
-        final Customer customer = new Customer();
-        customer.setIdCustomer(0L);
-        orders1.setCustomer(customer);
-        final Branch branch = new Branch();
-        branch.setIdBranch(0L);
-        orders1.setBranch(branch);
-        orders1.setCreatedAt(LocalDateTime.of(2020, 1, 1, 0, 0, 0));
-        orders1.setReceiverName("receiverName");
-        orders1.setReceiverPhone("receiverPhone");
-        orders1.setShippingAddress("shippingAddress");
-        orders1.setPaymentMethod("paymentMethod");
-        orders1.setNote("note");
-        final Voucher voucher = new Voucher();
-        voucher.setIdVoucher(0L);
-        orders1.setVoucher(voucher);
-        final Optional<Orders> orders = Optional.of(orders1);
-        when(mockOrdersRepository.findById(0L)).thenReturn(orders);
-
-        // Configure AvailableVoucherRepository.findByCustomer_IdCustomerAndVoucher_IdVoucher(...).
-        final AvailableVoucher availableVoucher = new AvailableVoucher();
-        availableVoucher.setIdAvailableVoucher(0L);
-        availableVoucher.setQuantity(0);
-        final Customer customer1 = new Customer();
-        customer1.setIdCustomer(0L);
-        customer1.setName("name");
-        availableVoucher.setCustomer(customer1);
-        when(mockAvailableVoucherRepository.findByCustomer_IdCustomerAndVoucher_IdVoucher(0L, 0L))
-                .thenReturn(availableVoucher);
-
-        // Run the test
-        final String result = salesServiceUnderTest.updateOrderStatus(0L, "newStatus", 0L);
-
-        // Verify the results
-        assertThat(result).isEqualTo("result");
-        verify(mockAvailableVoucherRepository).save(any(AvailableVoucher.class));
-        verify(mockOrdersRepository).save(any(Orders.class));
-    }
-
-    @Test
-    void testUpdateOrderStatus_OrdersRepositoryFindByIdReturnsAbsent() {
-        // Setup
-        when(mockOrdersRepository.findById(0L)).thenReturn(Optional.empty());
-
-        // Run the test
-        assertThatThrownBy(() -> salesServiceUnderTest.updateOrderStatus(0L, "newStatus", 0L))
-                .isInstanceOf(RuntimeException.class);
-    }
-
-    @Test
-    void testUpdateOrderStatus_AvailableVoucherRepositoryFindByCustomer_IdCustomerAndVoucher_IdVoucherReturnsNull() {
-        // Setup
-        // Configure OrdersRepository.findById(...).
-        final Orders orders1 = new Orders();
-        orders1.setIdOrders(0L);
-        orders1.setTotal(0.0);
-        orders1.setStatus("status");
-        final Customer customer = new Customer();
-        customer.setIdCustomer(0L);
-        orders1.setCustomer(customer);
-        final Branch branch = new Branch();
-        branch.setIdBranch(0L);
-        orders1.setBranch(branch);
-        orders1.setCreatedAt(LocalDateTime.of(2020, 1, 1, 0, 0, 0));
-        orders1.setReceiverName("receiverName");
-        orders1.setReceiverPhone("receiverPhone");
-        orders1.setShippingAddress("shippingAddress");
-        orders1.setPaymentMethod("paymentMethod");
-        orders1.setNote("note");
-        final Voucher voucher = new Voucher();
-        voucher.setIdVoucher(0L);
-        orders1.setVoucher(voucher);
-        final Optional<Orders> orders = Optional.of(orders1);
-        when(mockOrdersRepository.findById(0L)).thenReturn(orders);
-
-        when(mockAvailableVoucherRepository.findByCustomer_IdCustomerAndVoucher_IdVoucher(0L, 0L)).thenReturn(null);
-
-        // Run the test
-        final String result = salesServiceUnderTest.updateOrderStatus(0L, "newStatus", 0L);
-
-        // Verify the results
-        assertThat(result).isEqualTo("result");
-        verify(mockOrdersRepository).save(any(Orders.class));
+        return details;
     }
 }
