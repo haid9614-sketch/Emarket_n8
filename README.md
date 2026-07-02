@@ -1,6 +1,6 @@
 # eMarket Backend - Spring Boot REST API
 
-Đây là mã nguồn Backend (Máy chủ) của hệ thống Thương mại Điện tử eMarket - Đồ án môn học do **Nhóm 8** phát triển. Hệ thống cung cấp các RESTful API để xử lý logic mua bán, quản lý đơn hàng đa chi nhánh và kiểm soát tồn kho theo thời gian thực.
+Đây là mã nguồn Backend (Máy chủ) của hệ thống Thương mại Điện tử eMarket. Hệ thống cung cấp các RESTful API để xử lý logic mua bán, quản lý đơn hàng đa chi nhánh và kiểm soát tồn kho theo thời gian thực.
 
 ## Công nghệ sử dụng
 * **Framework:** Java Spring Boot 3.x
